@@ -123,7 +123,7 @@ namespace hepstd
     bool get_use_sum_weights    () const { return _flag_sumwts; }
     void set_use_sum_weights    (bool flag = true) { _flag_sumwts = flag; if(!flag) _weights.clear(); }
 
-    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const vector< vector<binselect_t> >& ordering) const; // unroll into 1D histogram from xlow to xhigh
+    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const vector< vector<bin_t> >& mapping) const; // unroll into 1D histogram from xlow to xhigh
     
     bool add			(const histogram_t*, entry_t w = (entry_t)1.); // add histogram to self with weight factor
     void scale			(entry_t); // scale self
@@ -718,9 +718,13 @@ namespace hepstd
     return true;
   }
 
+  // --------------===============--------------===============--------------===============
+
   template<unsigned int NDIM, typename DATA, typename WEIGHT>
-  histogram<1,DATA,WEIGHT> histogram<NDIM,DATA,WEIGHT>::unroll(data_t xlow, data_t xhigh) const
+  histogram<1,DATA,WEIGHT> histogram<NDIM,DATA,WEIGHT>::unroll(data_t xlow, data_t xhigh, const std::vector< std::vector<bin_t> >& mapping) const
   {
+    typedef typename histogram<1,DATA,WEIGHT>::binselect_t binselect1D_t;
+    typedef typename histogram<1,DATA,WEIGHT>::bin_t bin1D_t;
     data_t xpt = xlow;    
     ::boost::array<unsigned int, 1> nbins_arr = { { _entries.size() } };
     ::boost::array<data_t*, 1> bins_arr = { { new data_t[_entries.size()+1] } };
@@ -733,15 +737,35 @@ namespace hepstd
     unsigned ib = 0;
     const_filled_bin_iterator citr = begin();
     const_filled_bin_iterator eitr = err_begin();
+    long nentries = get_nentries();
     while(citr != end())
     {
-      h.set_bin_content(h.get_bin(typename histogram<1,DATA,WEIGHT>::binselect_t(ib)), citr->second);
-      h.set_bin_error(h.get_bin(typename histogram<1,DATA,WEIGHT>::binselect_t(ib)), std::sqrt(eitr->second));
-      ++ib;
+      // use bin mapping to find output index for each bin
+      bool mapped = false;
+      for(unsigned int ib=0; ib < mapping.size(); ++ib)
+      {
+	for(unsigned int jb=0; jb < mapping[ib].size(); ++jb)
+	{
+	  if(mapping[ib][jb].contains(citr->first))
+	  {
+	    bin1D_t b = h.get_bin(binselect1D_t(ib));
+            h.set_bin_content(b, h.get_bin_content(b) + citr->second);
+	    h.set_bin_error(b, std::sqrt(pow(h.get_bin_error(b),2) + eitr->second));
+	    mapped = true;
+	    break;
+	  }
+	}
+	if(mapped) break;
+      }
+      if(!mapped)
+      {
+	// exclude these entries from total
+	nentries -= _entries[citr->first];
+      }
       ++citr;
       ++eitr;
     }
-    h.set_nentries(this->_nentries);
+    h.set_nentries(nentries);
     return h;
   }
   
