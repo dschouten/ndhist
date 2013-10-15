@@ -232,6 +232,17 @@ namespace hepstd {
   } while(0)
 #endif 
   
+  typedef tuple<1,double> double_single_t;
+  typedef tuple<2,double> double_couple_t;
+  typedef tuple<3,double> double_triple_t;
+  typedef tuple<4,double> double_quadruple_t;
+  typedef tuple<5,double> double_quintuple_t;
+  typedef tuple<6,double> double_sextuple_t;
+  typedef tuple<7,double> double_septuple_t;
+  typedef tuple<8,double> double_octuple_t;
+  typedef tuple<9,double> double_nonuple_t;
+  typedef tuple<10,double> double_decuple_t;
+
   typedef tuple<1,float> float_single_t;
   typedef tuple<2,float> float_couple_t;
   typedef tuple<3,float> float_triple_t;
