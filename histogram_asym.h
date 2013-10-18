@@ -289,6 +289,7 @@ namespace hepstd
 
     bool is_underflow = false;
     bool is_overflow  = false;
+    bool is_undefined = false;
     typename bin_t::boundary_t edges;
     for(unsigned idim = 0; idim < NDIM; ++idim)
     {
@@ -305,6 +306,7 @@ namespace hepstd
       }
       if(j == this->IUNDEFINED)
       {
+	is_undefined = true;
 	edges.push_back(typename bin_t::interval_t(-std::numeric_limits<DATA>::max(), +std::numeric_limits<DATA>::max()));
       }
       if(j >= 0 && j < (int)(_bin_indices.size()))

@@ -110,21 +110,15 @@ namespace hepstd
     unsigned get_num_bins 	(unsigned idim) const { return _bin_definitions[idim].size(); } // number of bins along dimension 
     int get_ibin                (unsigned idim, data_t) const; // return index of bin along dimension that contains data value
     
-    data_t get_bin_low		(unsigned idim, unsigned ibin) const { return ( (idim < NDIM && ibin < _bin_definitions[idim].size()) ? 
-										_bin_definitions[idim][ibin].first : 
-										pow(-1.0, 0.5) ); } // bin location along specified dimension
-    data_t get_bin_high		(unsigned idim, unsigned ibin) const { return ( (idim < NDIM && ibin < _bin_definitions[idim].size()) ? 
-										_bin_definitions[idim][ibin].second : 
-										pow(-1.0, 0.5) ); }
-    data_t get_bin_center	(unsigned idim, unsigned ibin) const { return ( (idim < NDIM && ibin < _bin_definitions[idim].size()) ? 
-										get_bin_high(idim,ibin) + get_bin_low(idim,ibin) / 2 :
-										pow(-1.0, 0.5) ); }
+    data_t get_bin_low		(unsigned idim, unsigned ibin) const; 
+    data_t get_bin_high		(unsigned idim, unsigned ibin) const;
+    data_t get_bin_center	(unsigned idim, unsigned ibin) const;
     
     bool get_use_sum_weights    () const { return _flag_sumwts; }
     void set_use_sum_weights    (bool flag = true) { _flag_sumwts = flag; if(!flag) _weights.clear(); }
 
-    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const vector< vector<bin_t> >& mapping) const; // unroll into 1D histogram from xlow to xhigh
-    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const vector< vector<binselect_t> >& mapping) const; // unroll into 1D histogram from xlow to xhigh
+    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const std::vector< std::vector<bin_t> >& mapping) const; // unroll into 1D histogram from xlow to xhigh
+    histogram<1,DATA,WEIGHT> unroll(data_t xlow, data_t xhigh, const std::vector< std::vector<binselect_t> >& mapping) const; // unroll into 1D histogram from xlow to xhigh
     
     bool add			(const histogram_t*, entry_t w = (entry_t)1.); // add histogram to self with weight factor
     void scale			(entry_t); // scale self
@@ -329,7 +323,35 @@ namespace hepstd
     }
     return get_bin(binselect_t(ibin_def.data()));
   }
-  
+
+  // --------------===============--------------===============--------------===============
+
+  template<unsigned int NDIM, typename DATA, typename WEIGHT>
+  typename histogram<NDIM,DATA,WEIGHT>::data_t histogram<NDIM,DATA,WEIGHT>::get_bin_low(unsigned idim, unsigned ibin) const 
+  { 
+    idim = idim < NDIM ? idim : NDIM-1; 
+    ibin = ibin < _bin_definitions[idim].size() ? ibin : _bin_definitions[idim].size() - 1; 
+    return _bin_definitions[idim][ibin].first; 
+  } 
+
+  // --------------===============--------------===============--------------===============
+
+  template<unsigned int NDIM, typename DATA, typename WEIGHT>
+  typename histogram<NDIM,DATA,WEIGHT>::data_t histogram<NDIM,DATA,WEIGHT>::get_bin_high(unsigned idim, unsigned ibin) const 
+  { 
+    idim = idim < NDIM ? idim : NDIM-1; 
+    ibin = ibin < _bin_definitions[idim].size() ? ibin : _bin_definitions[idim].size() - 1; 
+    return _bin_definitions[idim][ibin].second; 
+  }  
+
+  // --------------===============--------------===============--------------===============
+
+  template<unsigned int NDIM, typename DATA, typename WEIGHT>
+  typename histogram<NDIM,DATA,WEIGHT>::data_t histogram<NDIM,DATA,WEIGHT>::get_bin_center(unsigned idim, unsigned ibin) const 
+  { 
+    return (get_bin_high(idim,ibin) + get_bin_low(idim,ibin)) / 2;
+  } 
+
   // --------------===============--------------===============--------------===============
   
   template<unsigned int NDIM, typename DATA, typename WEIGHT>
@@ -737,7 +759,7 @@ namespace hepstd
     histogram<1,DATA,WEIGHT> h(nbins_arr, bins_arr);
     const_filled_bin_iterator citr = begin();
     const_filled_bin_iterator eitr = err_begin();
-    long nentries = get_nentries();
+    long nentries = this->get_nentries();
     while(citr != end())
     {
       // use bin mapping to find output index for each bin
